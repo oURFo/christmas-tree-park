@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <title>聖誕樹佈置 · 溫馨童話夜</title>
+    <script type="module" crossorigin src="./assets/index-mzy4ENGL.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-sQVFQe_9.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+
+      <div id="hud" class="hud hidden">
+        <header class="top-bar">
+          <div class="level-chip" id="level-chip">溫馨童話夜</div>
+          <div class="top-actions">
+            <button type="button" id="btn-delete-mode" class="danger-btn" aria-pressed="false">回收</button>
+            <button type="button" id="btn-mute" class="icon-btn" aria-label="靜音">🔊</button>
+            <button type="button" id="btn-finish" class="primary-btn">完成佈置</button>
+          </div>
+        </header>
+
+        <div id="delete-toolbar" class="string-toolbar hidden">
+          <span class="hint">點擊已配置的飾品／燈條／裝置即可回收（燈條整條移除）</span>
+          <div class="string-actions">
+            <button type="button" id="btn-delete-done" class="primary-btn">完成</button>
+          </div>
+        </div>
+
+        <div id="string-toolbar" class="string-toolbar hidden">
+          <span class="hint">點樹冠放節點 · 連成燈條</span>
+          <div class="string-actions">
+            <button type="button" id="btn-string-undo" class="ghost-btn">回上一步</button>
+            <button type="button" id="btn-string-done" class="primary-btn">完成</button>
+          </div>
+        </div>
+
+        <div id="device-toolbar" class="device-toolbar hidden">
+          <span class="hint">拖移位置 · 旋轉朝向（空白處仍可轉鏡頭）</span>
+          <div class="device-actions">
+            <button type="button" id="btn-rotate-ccw" class="ghost-btn">↺</button>
+            <button type="button" id="btn-rotate-cw" class="ghost-btn">↻</button>
+            <button type="button" id="btn-device-delete" class="danger-btn">刪除</button>
+            <button type="button" id="btn-device-done" class="primary-btn">確定</button>
+          </div>
+        </div>
+
+        <div id="prop-toolbar" class="device-toolbar hidden">
+          <span class="hint">樹裙／火車固定樹心 · 禮盒可拖移 · 縮放大小</span>
+          <div class="device-actions">
+            <button type="button" id="btn-prop-smaller" class="ghost-btn">－</button>
+            <button type="button" id="btn-prop-bigger" class="ghost-btn">＋</button>
+            <button type="button" id="btn-prop-delete" class="danger-btn">刪除</button>
+            <button type="button" id="btn-prop-done" class="primary-btn">確定</button>
+          </div>
+        </div>
+
+        <section class="dock">
+          <div class="tabs" id="catalog-tabs"></div>
+          <div class="catalog" id="catalog"></div>
+        </section>
+      </div>
+
+      <div id="intro" class="overlay">
+        <div class="card">
+          <p class="eyebrow">聖誕專案 · 溫馨童話夜</p>
+          <h1>佈置童話夜裡的聖誕樹</h1>
+          <p class="lead">每局隨機關卡場景。拖曳飾品上樹、擺放大型裝置，通電後看看人氣與耗電。</p>
+          <button type="button" id="btn-start" class="primary-btn large">開始佈置</button>
+        </div>
+      </div>
+
+      <div id="result" class="result-layer hidden">
+        <div class="card result-card" id="result-card">
+          <div class="result-card-head">
+            <p class="eyebrow" id="result-level">溫馨童話夜</p>
+            <div class="result-dock-btns">
+              <button type="button" id="btn-result-expand" class="ghost-btn result-dock-btn hidden" title="展開分數板">展開</button>
+              <button type="button" id="btn-result-dock-left" class="ghost-btn result-dock-btn" title="縮小到左下">↙</button>
+              <button type="button" id="btn-result-dock-right" class="ghost-btn result-dock-btn" title="縮小到右下">↘</button>
+            </div>
+          </div>
+          <h2 id="result-title">結算中…</h2>
+          <div class="popularity">
+            <span id="result-score">0</span>
+            <small>人氣</small>
+          </div>
+          <div class="power-row" id="result-power-row">
+            <span>耗費電力</span>
+            <strong id="result-power">0 W</strong>
+          </div>
+          <ul class="breakdown" id="result-breakdown"></ul>
+          <div class="result-actions">
+            <button type="button" id="btn-retry" class="primary-btn large">再佈置一次</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
