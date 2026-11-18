@@ -59,6 +59,8 @@ export class Game {
 
   selectedDef: DecorDef | null = null
   activeCategory: DecorCategory = 'baubles'
+  /** 回收模式：點擊已配置物件移除 */
+  deleteMode = false
 
   // camera orbit
   camAngle = Math.PI * 0.25
@@ -154,6 +156,8 @@ export class Game {
       this.$('btn-mute').textContent = muted ? '🔇' : '🔊'
       this.audio.ui()
     }
+    this.$('btn-delete-mode').onclick = () => this.toggleDeleteMode()
+    this.$('btn-delete-done').onclick = () => this.setDeleteMode(false)
     this.$('btn-string-undo').onclick = () => this.undoStringNode()
     this.$('btn-string-done').onclick = () => this.completeStringTool()
     this.$('btn-rotate-ccw').onclick = () => this.rotateSelectedDevice(-Math.PI / 8)
@@ -195,6 +199,12 @@ export class Game {
       this.lastY = y
       this.updatePointer(x, y)
       if (this.phase !== 'decorate') return
+
+      if (this.deleteMode) {
+        if (this.tryRecycleAtPointer()) return
+        this.draggingCamera = true
+        return
+      }
 
       if (this.selectedDef?.kind === 'string') {
         if (this.hitTree()) this.placeStringNode()
@@ -336,6 +346,7 @@ export class Game {
     this.selectedDef = null
     this.selectedDeviceId = null
     this.selectedPropId = null
+    this.deleteMode = false
     this.stringDraftPoints = []
     this.pendingResult = null
     this.camAngle = Math.PI * 0.25
@@ -442,6 +453,7 @@ export class Game {
   }
 
   private selectDef(def: DecorDef) {
+    this.setDeleteMode(false, false)
     // leaving string tool commits current draft
     if (this.selectedDef?.kind === 'string' && def.id !== this.selectedDef.id) {
       this.commitStringDraft()
@@ -454,13 +466,40 @@ export class Game {
     this.audio.ui()
   }
 
+  private toggleDeleteMode() {
+    this.setDeleteMode(!this.deleteMode)
+  }
+
+  private setDeleteMode(on: boolean, playSound = true) {
+    if (this.deleteMode === on) {
+      this.updateToolbars()
+      return
+    }
+    this.deleteMode = on
+    if (on) {
+      if (this.selectedDef?.kind === 'string') this.commitStringDraft()
+      this.selectedDef = null
+      this.clearDeviceSelection()
+      this.clearPropSelection()
+      this.buildCatalog()
+    }
+    this.updateToolbars()
+    if (playSound) this.audio.ui()
+  }
+
   private updateToolbars() {
-    const stringOn = this.phase === 'decorate' && this.selectedDef?.kind === 'string'
-    const deviceOn = this.phase === 'decorate' && !!this.selectedDeviceId
-    const propOn = this.phase === 'decorate' && !!this.selectedPropId
+    const decorate = this.phase === 'decorate'
+    const deleteOn = decorate && this.deleteMode
+    const stringOn = decorate && !this.deleteMode && this.selectedDef?.kind === 'string'
+    const deviceOn = decorate && !this.deleteMode && !!this.selectedDeviceId
+    const propOn = decorate && !this.deleteMode && !!this.selectedPropId
+    this.$('delete-toolbar').classList.toggle('hidden', !deleteOn)
     this.$('string-toolbar').classList.toggle('hidden', !stringOn)
     this.$('device-toolbar').classList.toggle('hidden', !deviceOn)
     this.$('prop-toolbar').classList.toggle('hidden', !propOn)
+    const btn = this.$('btn-delete-mode')
+    btn.classList.toggle('active', deleteOn)
+    btn.setAttribute('aria-pressed', deleteOn ? 'true' : 'false')
   }
 
   startDecorate() {
@@ -501,6 +540,53 @@ export class Game {
       obj = obj.parent
     }
     return null
+  }
+
+  /** 回收：依距離優先命中飾品／燈條／裝置 */
+  private tryRecycleAtPointer(): boolean {
+    this.raycaster.setFromCamera(this.pointer, this.camera)
+    const hits = this.raycaster.intersectObjects([this.decorRoot, this.deviceRoot], true)
+    for (const h of hits) {
+      let obj: THREE.Object3D | null = h.object
+      while (obj) {
+        if (obj.userData.placedOrnamentId) {
+          this.removeOrnament(obj.userData.placedOrnamentId as string)
+          this.audio.undo()
+          return true
+        }
+        if (obj.userData.placedStringId) {
+          this.removeString(obj.userData.placedStringId as string)
+          this.audio.undo()
+          return true
+        }
+        if (obj.userData.placedDeviceId) {
+          this.removeDevice(obj.userData.placedDeviceId as string)
+          this.audio.undo()
+          return true
+        }
+        obj = obj.parent
+      }
+    }
+    return false
+  }
+
+  private removeString(id: string) {
+    this.strings = this.strings.filter((s) => s.id !== id)
+    const mesh = this.stringMeshes.get(id)
+    if (mesh) {
+      this.decorRoot.remove(mesh)
+      this.stringMeshes.delete(id)
+    }
+  }
+
+  private removeDevice(id: string) {
+    this.devices = this.devices.filter((d) => d.id !== id)
+    const mesh = this.deviceMeshes.get(id)
+    if (mesh) {
+      this.deviceRoot.remove(mesh)
+      this.deviceMeshes.delete(id)
+    }
+    if (this.selectedDeviceId === id) this.clearDeviceSelection()
   }
 
   private placeOrnamentOrBase() {
@@ -678,6 +764,7 @@ export class Game {
       const points = this.stringDraftPoints.map((p) => [p.x, p.y, p.z] as [number, number, number])
       this.strings.push({ id, defId: def.id, points })
       if (this.stringDraftMesh) {
+        this.stringDraftMesh.userData.placedStringId = id
         this.stringMeshes.set(id, this.stringDraftMesh)
         this.stringDraftMesh = null
       }
@@ -729,6 +816,9 @@ export class Game {
     if (arrow) arrow.visible = true
     this.deviceRoot.add(mesh)
     this.deviceMeshes.set(id, mesh)
+    // 放完大型裝置立刻取消目錄選取，避免轉鏡頭時誤點再放
+    this.selectedDef = null
+    this.buildCatalog()
     this.selectDevice(id)
     this.audio.place()
   }
@@ -890,20 +980,14 @@ export class Game {
 
   private deleteSelectedDevice() {
     if (!this.selectedDeviceId) return
-    const id = this.selectedDeviceId
-    this.devices = this.devices.filter((d) => d.id !== id)
-    const mesh = this.deviceMeshes.get(id)
-    if (mesh) {
-      this.deviceRoot.remove(mesh)
-      this.deviceMeshes.delete(id)
-    }
-    this.clearDeviceSelection()
+    this.removeDevice(this.selectedDeviceId)
     this.audio.undo()
   }
 
   beginShowcase() {
     if (this.phase !== 'decorate') return
     this.commitStringDraft()
+    this.deleteMode = false
     this.selectedDef = null
     this.clearDeviceSelection()
     this.clearPropSelection()
@@ -985,6 +1069,7 @@ export class Game {
         def,
         true,
       )
+      lit.userData.placedStringId = id
       this.decorRoot.remove(mesh)
       this.decorRoot.add(lit)
       this.stringMeshes.set(id, lit)

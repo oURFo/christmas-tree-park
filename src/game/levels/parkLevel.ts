@@ -1,24 +1,27 @@
-import type { LevelConfig } from '../types'
+import type { LevelConfig, LevelTitle, TitleWhen } from '../types'
 
-const memeLow = (titles: string[]): LevelConfig['titles'][number] => ({
+const t = (text: string, ...when: TitleWhen[]): LevelTitle =>
+  when.length ? { text, when } : { text }
+
+const memeLow = (titles: LevelTitle[]): LevelConfig['titles'][number] => ({
   min: 0,
   max: 9999,
   tone: 'meme',
   titles,
 })
-const memeMid = (titles: string[]): LevelConfig['titles'][number] => ({
+const memeMid = (titles: LevelTitle[]): LevelConfig['titles'][number] => ({
   min: 10000,
   max: 24999,
   tone: 'meme',
   titles,
 })
-const memeHigh = (titles: string[]): LevelConfig['titles'][number] => ({
+const memeHigh = (titles: LevelTitle[]): LevelConfig['titles'][number] => ({
   min: 25000,
   max: 39999,
   tone: 'meme',
   titles,
 })
-const normal = (min: number, max: number, titles: string[]): LevelConfig['titles'][number] => ({
+const normal = (min: number, max: number, titles: LevelTitle[]): LevelConfig['titles'][number] => ({
   min,
   max,
   tone: 'normal',
@@ -40,13 +43,44 @@ export const LEVEL_COZY_FAIRY: LevelConfig = {
     minPreferredColorRatio: 0.42,
   },
   titles: [
-    memeLow(['故事書還沒開頁', '童話精靈路過沒認出', '打卡失敗・請重拍']),
-    memeMid(['完全是在浪費電', '電力公司：謝謝你的業績', '這比較像工地夜景']),
-    memeHigh(['聖誕樹本人很想請假', '公園管理局已報警', '樹：我只是背景板']),
-    normal(25000, 44999, ['社區溫馨小聚點', '街坊開始駐足拍照']),
-    normal(45000, 64999, ['童話公園熱門打卡', '情侶與親子必訪夜景']),
-    normal(65000, 84999, ['城市級夢幻童話盛典', '人潮擠爆公園步道']),
-    normal(85000, 99999, ['傳說級奇蹟聖誕樹', '登上頭條的童話奇蹟']),
+    memeLow([
+      t('故事書還沒開頁', { kind: 'maxItems', n: 4 }),
+      t('童話精靈路過沒認出', { kind: 'minItems', n: 5 }, { kind: 'maxSceneFit', n: 45 }),
+      t('打卡失敗・請重拍', { kind: 'minItems', n: 5 }, { kind: 'maxSpatial', n: 40 }),
+      t('就只是一棵樹'),
+    ]),
+    memeMid([
+      t('完全是在浪費電', { kind: 'minPower', w: 500 }, { kind: 'maxWeighted', n: 48 }),
+      t('電力公司：謝謝你的業績', { kind: 'minStrings', n: 2 }, { kind: 'maxColor', n: 48 }),
+      t('這比較像工地夜景', { kind: 'maxPrefColor', r: 0.45 }, { kind: 'minItems', n: 6 }),
+      t('完全是在浪費電'),
+    ]),
+    memeHigh([
+      t('聖誕樹本人很想請假', { kind: 'unevenSpatial' }, { kind: 'minTreeOrnaments', n: 5 }),
+      t('公園管理局已報警', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 55 }),
+      t('樹：我只是背景板', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 4 }),
+      t('聖誕樹本人很想請假'),
+    ]),
+    normal(25000, 44999, [
+      t('社區溫馨小聚點', { kind: 'maxItems', n: 18 }),
+      t('街坊開始駐足拍照', { kind: 'minStrings', n: 1 }, { kind: 'minSpatial', n: 45 }),
+      t('社區溫馨小聚點'),
+    ]),
+    normal(45000, 64999, [
+      t('童話公園熱門打卡', { kind: 'hasTag', tag: '童話' }),
+      t('情侶與親子必訪夜景', { kind: 'minSceneFit', n: 55 }, { kind: 'hasBase' }),
+      t('童話公園熱門打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級夢幻童話盛典', { kind: 'minItems', n: 20 }, { kind: 'hasTopper' }),
+      t('人潮擠爆公園步道', { kind: 'minDevices', n: 2 }, { kind: 'minStrings', n: 1 }),
+      t('城市級夢幻童話盛典'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級奇蹟聖誕樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上頭條的童話奇蹟', { kind: 'minColor', n: 65 }, { kind: 'hasTopper' }),
+      t('傳說級奇蹟聖誕樹'),
+    ]),
   ],
 }
 
@@ -66,13 +100,44 @@ export const LEVEL_ICE_BLUE: LevelConfig = {
     sceneFitWeight: 1.1,
   },
   titles: [
-    memeLow(['結冰失敗・請回溫', '雪精靈：這什麼熱帶風', '藍白配額未達標']),
-    memeMid(['冰箱門沒關好', '這比較像開冷氣', '融雪預報已發布']),
-    memeHigh(['冰晶本人想請假', '觀測站拒絕承認', '極光：我先走了']),
-    normal(25000, 44999, ['社區小雪景點', '路人開始拍霧氣']),
-    normal(45000, 64999, ['冰晶公園打卡牆', '冷色控必訪夜景']),
-    normal(65000, 84999, ['城市級冰雪鏡面夜', '旅遊雜誌封面候選']),
-    normal(85000, 99999, ['傳說級冰晶奇蹟樹', '登上極地影像年鑑']),
+    memeLow([
+      t('結冰失敗・請回溫', { kind: 'maxPrefColor', r: 0.4 }),
+      t('雪精靈：這什麼熱帶風', { kind: 'familyCountAtLeast', n: 4 }),
+      t('藍白配額未達標', { kind: 'maxItems', n: 6 }),
+      t('結冰失敗・請回溫'),
+    ]),
+    memeMid([
+      t('冰箱門沒關好', { kind: 'hasId', id: 'dev_snow' }, { kind: 'maxSceneFit', n: 50 }),
+      t('這比較像開冷氣', { kind: 'minPower', w: 400 }, { kind: 'maxColor', n: 45 }),
+      t('融雪預報已發布', { kind: 'missingId', id: 'dev_snow' }, { kind: 'hasTag', tag: '冰雪' }),
+      t('這比較像開冷氣'),
+    ]),
+    memeHigh([
+      t('冰晶本人想請假', { kind: 'unevenSpatial' }),
+      t('觀測站拒絕承認', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 55 }),
+      t('極光：我先走了', { kind: 'maxStrings', n: 0 }),
+      t('冰晶本人想請假'),
+    ]),
+    normal(25000, 44999, [
+      t('社區小雪景點', { kind: 'maxItems', n: 18 }),
+      t('路人開始拍霧氣', { kind: 'hasId', id: 'dev_snow' }),
+      t('社區小雪景點'),
+    ]),
+    normal(45000, 64999, [
+      t('冰晶公園打卡牆', { kind: 'minPrefColor', r: 0.55 }),
+      t('冷色控必訪夜景', { kind: 'minColor', n: 55 }, { kind: 'familyCountAtMost', n: 3 }),
+      t('冰晶公園打卡牆'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級冰雪鏡面夜', { kind: 'hasId', id: 'dev_snow' }, { kind: 'hasTopper' }),
+      t('旅遊雜誌封面候選', { kind: 'minSpatial', n: 60 }, { kind: 'minStrings', n: 1 }),
+      t('城市級冰雪鏡面夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級冰晶奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上極地影像年鑑', { kind: 'minPrefColor', r: 0.7 }),
+      t('傳說級冰晶奇蹟樹'),
+    ]),
   ],
 }
 
@@ -92,13 +157,44 @@ export const LEVEL_PARTY_NEON: LevelConfig = {
     richnessBonus: 1.15,
   },
   titles: [
-    memeLow(['DJ 還沒到場', '霓虹燈壞一半', '派對被房東趕走']),
-    memeMid(['完全是在燒電費', '鄰居報警第三次', '這比較像修車廠']),
-    memeHigh(['樹：我只是背景板', '保安請離場', '音響已過載']),
-    normal(25000, 44999, ['社區小型派對場', '路人開始跟著晃']),
-    normal(45000, 64999, ['夜店級公園打卡', '週末人潮熱點']),
-    normal(65000, 84999, ['城市級霓虹聖誕夜', '短影音播放破百萬']),
-    normal(85000, 99999, ['傳說級霓虹奇蹟樹', '登上跨年直播主視覺']),
+    memeLow([
+      t('DJ 還沒到場', { kind: 'missingId', id: 'dev_speaker' }, { kind: 'maxItems', n: 8 }),
+      t('霓虹燈壞一半', { kind: 'maxStrings', n: 0 }),
+      t('派對被房東趕走', { kind: 'minDevices', n: 1 }, { kind: 'maxDeviceAim', n: 40 }),
+      t('DJ 還沒到場'),
+    ]),
+    memeMid([
+      t('完全是在燒電費', { kind: 'minPower', w: 600 }),
+      t('鄰居報警第三次', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'maxSceneFit', n: 50 }),
+      t('這比較像修車廠', { kind: 'maxPrefColor', r: 0.4 }, { kind: 'familyCountAtLeast', n: 5 }),
+      t('完全是在燒電費'),
+    ]),
+    memeHigh([
+      t('樹：我只是背景板', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('保安請離場', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 50 }),
+      t('音響已過載', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'minPower', w: 500 }),
+      t('樹：我只是背景板'),
+    ]),
+    normal(25000, 44999, [
+      t('社區小型派對場', { kind: 'maxItems', n: 18 }),
+      t('路人開始跟著晃', { kind: 'hasId', id: 'dev_speaker' }),
+      t('社區小型派對場'),
+    ]),
+    normal(45000, 64999, [
+      t('夜店級公園打卡', { kind: 'hasTag', tag: '派對' }),
+      t('週末人潮熱點', { kind: 'minDevices', n: 2 }, { kind: 'minStrings', n: 1 }),
+      t('夜店級公園打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級霓虹聖誕夜', { kind: 'minItems', n: 20 }, { kind: 'hasTopper' }),
+      t('短影音播放破百萬', { kind: 'minSpatial', n: 55 }, { kind: 'minStrings', n: 2 }),
+      t('城市級霓虹聖誕夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級霓虹奇蹟樹', { kind: 'minSceneFit', n: 65 }),
+      t('登上跨年直播主視覺', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'minColor', n: 60 }),
+      t('傳說級霓虹奇蹟樹'),
+    ]),
   ],
 }
 
@@ -118,13 +214,44 @@ export const LEVEL_CANDY_TOWN: LevelConfig = {
     richnessBonus: 1.08,
   },
   titles: [
-    memeLow(['糖果罐是空的', '小孩看一眼就走', '蛀牙警報尚未解除']),
-    memeMid(['甜度不足・再加糖', '這比較像藥局燈箱', '拐杖糖全歪了']),
-    memeHigh(['薑餅人拒絕上工', '糖霜掉漆', '遊行改道了']),
-    normal(25000, 44999, ['社區糖果小市集', '親子開始停腳']),
-    normal(45000, 64999, ['糖果鎮熱門打卡', '幼稚園指定參觀']),
-    normal(65000, 84999, ['城市級童話糖霜夜', '人潮擠爆糖果步道']),
-    normal(85000, 99999, ['傳說級糖果奇蹟樹', '登上童書封面']),
+    memeLow([
+      t('糖果罐是空的', { kind: 'maxItems', n: 4 }),
+      t('小孩看一眼就走', { kind: 'minItems', n: 5 }, { kind: 'maxSceneFit', n: 40 }),
+      t('蛀牙警報尚未解除', { kind: 'maxPrefColor', r: 0.4 }),
+      t('糖果罐是空的'),
+    ]),
+    memeMid([
+      t('甜度不足・再加糖', { kind: 'maxPrefColor', r: 0.5 }, { kind: 'minItems', n: 8 }),
+      t('這比較像藥局燈箱', { kind: 'familyCountAtLeast', n: 5 }),
+      t('拐杖糖全歪了', { kind: 'unevenSpatial' }),
+      t('甜度不足・再加糖'),
+    ]),
+    memeHigh([
+      t('薑餅人拒絕上工', { kind: 'noBase' }),
+      t('糖霜掉漆', { kind: 'maxColor', n: 45 }),
+      t('遊行改道了', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 55 }),
+      t('薑餅人拒絕上工'),
+    ]),
+    normal(25000, 44999, [
+      t('社區糖果小市集', { kind: 'maxItems', n: 18 }),
+      t('親子開始停腳', { kind: 'hasTag', tag: '童趣' }, { kind: 'hasBase' }),
+      t('社區糖果小市集'),
+    ]),
+    normal(45000, 64999, [
+      t('糖果鎮熱門打卡', { kind: 'minPrefColor', r: 0.5 }),
+      t('幼稚園指定參觀', { kind: 'hasTag', tag: '童話' }, { kind: 'minStrings', n: 1 }),
+      t('糖果鎮熱門打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級童話糖霜夜', { kind: 'hasTopper' }, { kind: 'minItems', n: 18 }),
+      t('人潮擠爆糖果步道', { kind: 'minDevices', n: 2 }, { kind: 'minSpatial', n: 55 }),
+      t('城市級童話糖霜夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級糖果奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上童書封面', { kind: 'minColor', n: 65 }, { kind: 'hasTag', tag: '童趣' }),
+      t('傳說級糖果奇蹟樹'),
+    ]),
   ],
 }
 
@@ -144,13 +271,44 @@ export const LEVEL_STAR_OBSERVATORY: LevelConfig = {
     sceneFitWeight: 1.12,
   },
   titles: [
-    memeLow(['雲層百分之百', '望遠鏡蓋子沒開', '星象儀當機']),
-    memeMid(['光害超標', '這比較像停車場', '北極星找不到']),
-    memeHigh(['觀測員想請假', '流星雨改延期', '衛星訊號干擾']),
-    normal(25000, 44999, ['社區小小觀星點', '天文社開始駐足']),
-    normal(45000, 64999, ['觀測台熱門夜景', '長曝攝影師聚集']),
-    normal(65000, 84999, ['城市級星空聖誕夜', '登上天文日曆']),
-    normal(85000, 99999, ['傳說級星塵奇蹟樹', '被寫進星圖註記']),
+    memeLow([
+      t('雲層百分之百', { kind: 'maxStrings', n: 0 }),
+      t('望遠鏡蓋子沒開', { kind: 'maxDevices', n: 0 }),
+      t('星象儀當機', { kind: 'maxItems', n: 5 }),
+      t('雲層百分之百'),
+    ]),
+    memeMid([
+      t('光害超標', { kind: 'minPower', w: 550 }),
+      t('這比較像停車場', { kind: 'maxPrefColor', r: 0.45 }, { kind: 'minDevices', n: 1 }),
+      t('北極星找不到', { kind: 'noTopper' }),
+      t('光害超標'),
+    ]),
+    memeHigh([
+      t('觀測員想請假', { kind: 'unevenSpatial' }),
+      t('流星雨改延期', { kind: 'maxStringNodes', n: 6 }, { kind: 'minStrings', n: 1 }),
+      t('衛星訊號干擾', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 55 }),
+      t('觀測員想請假'),
+    ]),
+    normal(25000, 44999, [
+      t('社區小小觀星點', { kind: 'maxItems', n: 18 }),
+      t('天文社開始駐足', { kind: 'hasTopper' }, { kind: 'minStrings', n: 1 }),
+      t('社區小小觀星點'),
+    ]),
+    normal(45000, 64999, [
+      t('觀測台熱門夜景', { kind: 'minSceneFit', n: 55 }),
+      t('長曝攝影師聚集', { kind: 'minSpatial', n: 55 }, { kind: 'minDevices', n: 1 }),
+      t('觀測台熱門夜景'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級星空聖誕夜', { kind: 'hasTopper' }, { kind: 'minStrings', n: 2 }),
+      t('登上天文日曆', { kind: 'minColor', n: 60 }, { kind: 'minPrefColor', r: 0.55 }),
+      t('城市級星空聖誕夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級星塵奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('被寫進星圖註記', { kind: 'hasId', id: 'top_star' }),
+      t('傳說級星塵奇蹟樹'),
+    ]),
   ],
 }
 
@@ -169,13 +327,44 @@ export const LEVEL_CHURCH_BELLS: LevelConfig = {
     minPreferredColorRatio: 0.55,
   },
   titles: [
-    memeLow(['鐘還沒敲響', '唱詩班還沒到', '燭火全滅了']),
-    memeMid(['管風琴跑調', '這比較像工地彌撒', '禮帽戴反了']),
-    memeHigh(['天使想加班費', '鐘樓管理員報警', '樹：我只是聖壇背景']),
-    normal(25000, 44999, ['社區溫馨彌撒角', '街坊開始駐足聽鐘']),
-    normal(45000, 64999, ['教堂廣場熱門夜景', '婚禮攝影首選']),
-    normal(65000, 84999, ['城市級鐘鳴聖誕夜', '人潮擠滿石階']),
-    normal(85000, 99999, ['傳說級聖壇奇蹟樹', '登上聖樂節主視覺']),
+    memeLow([
+      t('鐘還沒敲響', { kind: 'maxStrings', n: 0 }),
+      t('唱詩班還沒到', { kind: 'maxItems', n: 5 }),
+      t('燭火全滅了', { kind: 'maxDevices', n: 0 }, { kind: 'maxPower', w: 120 }),
+      t('鐘還沒敲響'),
+    ]),
+    memeMid([
+      t('管風琴跑調', { kind: 'minStrings', n: 1 }, { kind: 'maxColor', n: 48 }),
+      t('這比較像工地彌撒', { kind: 'maxPrefColor', r: 0.5 }, { kind: 'minDevices', n: 1 }),
+      t('禮帽戴反了', { kind: 'hasTopper' }, { kind: 'maxSpatial', n: 45 }),
+      t('管風琴跑調'),
+    ]),
+    memeHigh([
+      t('天使想加班費', { kind: 'minPower', w: 500 }, { kind: 'maxWeighted', n: 55 }),
+      t('鐘樓管理員報警', { kind: 'minDevices', n: 2 }, { kind: 'maxDeviceAim', n: 55 }),
+      t('樹：我只是聖壇背景', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('天使想加班費'),
+    ]),
+    normal(25000, 44999, [
+      t('社區溫馨彌撒角', { kind: 'hasBase' }, { kind: 'maxItems', n: 20 }),
+      t('街坊開始駐足聽鐘', { kind: 'minStrings', n: 1 }, { kind: 'minSpatial', n: 45 }),
+      t('社區溫馨彌撒角'),
+    ]),
+    normal(45000, 64999, [
+      t('教堂廣場熱門夜景', { kind: 'minSceneFit', n: 55 }),
+      t('婚禮攝影首選', { kind: 'hasTopper' }, { kind: 'minColor', n: 55 }),
+      t('教堂廣場熱門夜景'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級鐘鳴聖誕夜', { kind: 'hasTopper' }, { kind: 'hasBase' }),
+      t('人潮擠滿石階', { kind: 'minDevices', n: 2 }, { kind: 'minItems', n: 20 }),
+      t('城市級鐘鳴聖誕夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級聖壇奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上聖樂節主視覺', { kind: 'minPrefColor', r: 0.65 }, { kind: 'hasTag', tag: '經典' }),
+      t('傳說級聖壇奇蹟樹'),
+    ]),
   ],
 }
 
@@ -195,13 +384,44 @@ export const LEVEL_STATION_SNOW: LevelConfig = {
     richnessBonus: 1.05,
   },
   titles: [
-    memeLow(['誤點兩小時', '月台空無一人', '行李轉盤卡關']),
-    memeMid(['廣播只有雜音', '這比較像貨運站', '雪把軌道蓋住了']),
-    memeHigh(['車長想請假', '列車改停靠別站', '樹：我只是月台柱']),
-    normal(25000, 44999, ['社區小小終點站', '旅人開始拍照']),
-    normal(45000, 64999, ['雪月台熱門打卡', '鐵道迷聚集點']),
-    normal(65000, 84999, ['城市級旅路聖誕夜', '短影音列車主題爆紅']),
-    normal(85000, 99999, ['傳說級終點奇蹟樹', '登上時刻表封面']),
+    memeLow([
+      t('誤點兩小時', { kind: 'maxItems', n: 5 }),
+      t('月台空無一人', { kind: 'maxDevices', n: 0 }, { kind: 'maxTreeOrnaments', n: 3 }),
+      t('行李轉盤卡關', { kind: 'noBase' }),
+      t('誤點兩小時'),
+    ]),
+    memeMid([
+      t('廣播只有雜音', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'maxSceneFit', n: 50 }),
+      t('這比較像貨運站', { kind: 'maxPrefColor', r: 0.4 }, { kind: 'minDevices', n: 1 }),
+      t('雪把軌道蓋住了', { kind: 'hasId', id: 'dev_snow' }, { kind: 'missingId', id: 'base_train' }),
+      t('這比較像貨運站'),
+    ]),
+    memeHigh([
+      t('車長想請假', { kind: 'unevenSpatial' }),
+      t('列車改停靠別站', { kind: 'missingId', id: 'base_train' }, { kind: 'minItems', n: 10 }),
+      t('樹：我只是月台柱', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('車長想請假'),
+    ]),
+    normal(25000, 44999, [
+      t('社區小小終點站', { kind: 'maxItems', n: 18 }),
+      t('旅人開始拍照', { kind: 'hasId', id: 'base_train' }),
+      t('社區小小終點站'),
+    ]),
+    normal(45000, 64999, [
+      t('雪月台熱門打卡', { kind: 'hasId', id: 'dev_snow' }),
+      t('鐵道迷聚集點', { kind: 'hasId', id: 'base_train' }, { kind: 'minStrings', n: 1 }),
+      t('雪月台熱門打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級旅路聖誕夜', { kind: 'hasTopper' }, { kind: 'hasId', id: 'base_train' }),
+      t('短影音列車主題爆紅', { kind: 'minDevices', n: 2 }, { kind: 'minSpatial', n: 55 }),
+      t('城市級旅路聖誕夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級終點奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上時刻表封面', { kind: 'hasId', id: 'base_train' }, { kind: 'minColor', n: 60 }),
+      t('傳說級終點奇蹟樹'),
+    ]),
   ],
 }
 
@@ -223,13 +443,44 @@ export const LEVEL_MUSEUM_WHITE: LevelConfig = {
     sceneFitWeight: 1.15,
   },
   titles: [
-    memeLow(['策展人搖頭', '作品說明是空白', '觀眾請離場']),
-    memeMid(['這比較像倉儲', '白牆被彩筆塗鴉', '導覽耳機沒電']),
-    memeHigh(['典藏品拒絕展出', '燈光太花被退件', '樹：我不是裝置藝術嗎']),
-    normal(25000, 44999, ['小型白盒展角', '設計系學生駐足']),
-    normal(45000, 64999, ['美術館熱門打卡', '極簡控必訪夜景']),
-    normal(65000, 84999, ['城市級白盒聖誕展', '登上設計雙年展側記']),
-    normal(85000, 99999, ['傳說級極簡奇蹟樹', '被永久典藏紀念']),
+    memeLow([
+      t('策展人搖頭', { kind: 'maxSceneFit', n: 40 }),
+      t('作品說明是空白', { kind: 'maxItems', n: 4 }),
+      t('觀眾請離場', { kind: 'familyCountAtLeast', n: 4 }),
+      t('策展人搖頭'),
+    ]),
+    memeMid([
+      t('這比較像倉儲', { kind: 'minItems', n: 22 }),
+      t('白牆被彩筆塗鴉', { kind: 'familyCountAtLeast', n: 4 }, { kind: 'maxPrefColor', r: 0.5 }),
+      t('導覽耳機沒電', { kind: 'maxStrings', n: 0 }, { kind: 'minItems', n: 8 }),
+      t('這比較像倉儲'),
+    ]),
+    memeHigh([
+      t('典藏品拒絕展出', { kind: 'maxPrefColor', r: 0.5 }),
+      t('燈光太花被退件', { kind: 'minPower', w: 500 }, { kind: 'familyCountAtLeast', n: 4 }),
+      t('樹：我不是裝置藝術嗎', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('典藏品拒絕展出'),
+    ]),
+    normal(25000, 44999, [
+      t('小型白盒展角', { kind: 'maxItems', n: 16 }),
+      t('設計系學生駐足', { kind: 'familyCountAtMost', n: 3 }, { kind: 'minColor', n: 50 }),
+      t('小型白盒展角'),
+    ]),
+    normal(45000, 64999, [
+      t('美術館熱門打卡', { kind: 'minSceneFit', n: 55 }),
+      t('極簡控必訪夜景', { kind: 'maxItems', n: 20 }, { kind: 'familyCountAtMost', n: 3 }),
+      t('美術館熱門打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級白盒聖誕展', { kind: 'hasTopper' }, { kind: 'minPrefColor', r: 0.6 }),
+      t('登上設計雙年展側記', { kind: 'minSpatial', n: 60 }, { kind: 'minStrings', n: 1 }),
+      t('城市級白盒聖誕展'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級極簡奇蹟樹', { kind: 'minSceneFit', n: 70 }, { kind: 'familyCountAtMost', n: 3 }),
+      t('被永久典藏紀念', { kind: 'minColor', n: 70 }),
+      t('傳說級極簡奇蹟樹'),
+    ]),
   ],
 }
 
@@ -250,13 +501,44 @@ export const LEVEL_LIBRARY_NIGHT: LevelConfig = {
     sparseItemSoftCap: 20,
   },
   titles: [
-    memeLow(['請保持安靜', '閉館廣播已響起', '借書證過期']),
-    memeMid(['這比較像印刷廠', '書頁全被糖霜黏住', '管理員皺眉三次']),
-    memeHigh(['禁語區警報', '音響被沒收', '樹：我只是書架背景']),
-    normal(25000, 44999, ['社區靜讀小角落', '夜讀人開始駐足']),
-    normal(45000, 64999, ['圖書館熱門夜景', '書香與燈火同框']),
-    normal(65000, 84999, ['城市級靜夜聖誕展', '登上閱讀節主海報']),
-    normal(85000, 99999, ['傳說級書香奇蹟樹', '寫進館史紀念冊']),
+    memeLow([
+      t('請保持安靜', { kind: 'hasId', id: 'dev_speaker' }),
+      t('閉館廣播已響起', { kind: 'maxItems', n: 5 }),
+      t('借書證過期', { kind: 'maxSceneFit', n: 40 }),
+      t('閉館廣播已響起'),
+    ]),
+    memeMid([
+      t('這比較像印刷廠', { kind: 'minItems', n: 22 }),
+      t('書頁全被糖霜黏住', { kind: 'maxPrefColor', r: 0.5 }, { kind: 'familyCountAtLeast', n: 4 }),
+      t('管理員皺眉三次', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'minPower', w: 300 }),
+      t('管理員皺眉三次'),
+    ]),
+    memeHigh([
+      t('禁語區警報', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'minDevices', n: 1 }),
+      t('音響被沒收', { kind: 'hasId', id: 'dev_speaker' }, { kind: 'minPower', w: 450 }),
+      t('樹：我只是書架背景', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('禁語區警報'),
+    ]),
+    normal(25000, 44999, [
+      t('社區靜讀小角落', { kind: 'maxItems', n: 16 }),
+      t('夜讀人開始駐足', { kind: 'missingId', id: 'dev_speaker' }, { kind: 'minStrings', n: 1 }),
+      t('社區靜讀小角落'),
+    ]),
+    normal(45000, 64999, [
+      t('圖書館熱門夜景', { kind: 'minSceneFit', n: 55 }),
+      t('書香與燈火同框', { kind: 'minColor', n: 55 }, { kind: 'hasTag', tag: '復古' }),
+      t('圖書館熱門夜景'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級靜夜聖誕展', { kind: 'hasTopper' }, { kind: 'missingId', id: 'dev_speaker' }),
+      t('登上閱讀節主海報', { kind: 'minSpatial', n: 60 }, { kind: 'minPrefColor', r: 0.55 }),
+      t('城市級靜夜聖誕展'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級書香奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('寫進館史紀念冊', { kind: 'minColor', n: 65 }, { kind: 'familyCountAtMost', n: 3 }),
+      t('傳說級書香奇蹟樹'),
+    ]),
   ],
 }
 
@@ -277,13 +559,44 @@ export const LEVEL_PALACE_FEAST: LevelConfig = {
     sceneFitWeight: 1.08,
   },
   titles: [
-    memeLow(['宴會延期', '紅毯還沒鋪好', '侍從找不到皇冠']),
-    memeMid(['這比較像喜宴搭棚', '金箔預算超支', '禮炮啞火']),
-    memeHigh(['御廚想請假', '宮廷攝影師拒拍', '樹：我只是柱子']),
-    normal(25000, 44999, ['社區小型晚宴角', '賓客開始舉杯']),
-    normal(45000, 64999, ['皇宮廣場熱門打卡', '紅金控必訪夜景']),
-    normal(65000, 84999, ['城市級紅金盛宴夜', '人潮擠滿宮階']),
-    normal(85000, 99999, ['傳說級皇宮奇蹟樹', '登上國宴紀念冊']),
+    memeLow([
+      t('宴會延期', { kind: 'maxItems', n: 5 }),
+      t('紅毯還沒鋪好', { kind: 'noBase' }),
+      t('侍從找不到皇冠', { kind: 'noTopper' }),
+      t('宴會延期'),
+    ]),
+    memeMid([
+      t('這比較像喜宴搭棚', { kind: 'maxPrefColor', r: 0.5 }, { kind: 'minDevices', n: 1 }),
+      t('金箔預算超支', { kind: 'minPower', w: 550 }),
+      t('禮炮啞火', { kind: 'maxStrings', n: 0 }, { kind: 'minItems', n: 8 }),
+      t('這比較像喜宴搭棚'),
+    ]),
+    memeHigh([
+      t('御廚想請假', { kind: 'unevenSpatial' }),
+      t('宮廷攝影師拒拍', { kind: 'maxColor', n: 45 }, { kind: 'minItems', n: 10 }),
+      t('樹：我只是柱子', { kind: 'minDevices', n: 2 }, { kind: 'maxTreeOrnaments', n: 5 }),
+      t('御廚想請假'),
+    ]),
+    normal(25000, 44999, [
+      t('社區小型晚宴角', { kind: 'maxItems', n: 18 }),
+      t('賓客開始舉杯', { kind: 'hasBase' }, { kind: 'minStrings', n: 1 }),
+      t('社區小型晚宴角'),
+    ]),
+    normal(45000, 64999, [
+      t('皇宮廣場熱門打卡', { kind: 'minPrefColor', r: 0.55 }),
+      t('紅金控必訪夜景', { kind: 'minColor', n: 55 }, { kind: 'hasTag', tag: '華麗' }),
+      t('皇宮廣場熱門打卡'),
+    ]),
+    normal(65000, 84999, [
+      t('城市級紅金盛宴夜', { kind: 'hasTopper' }, { kind: 'hasBase' }),
+      t('人潮擠滿宮階', { kind: 'minDevices', n: 2 }, { kind: 'minItems', n: 22 }),
+      t('城市級紅金盛宴夜'),
+    ]),
+    normal(85000, 99999, [
+      t('傳說級皇宮奇蹟樹', { kind: 'minSceneFit', n: 70 }),
+      t('登上國宴紀念冊', { kind: 'minPrefColor', r: 0.7 }, { kind: 'minColor', n: 65 }),
+      t('傳說級皇宮奇蹟樹'),
+    ]),
   ],
 }
 

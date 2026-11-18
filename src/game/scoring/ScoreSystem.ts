@@ -1,25 +1,150 @@
 import { getDecor } from '../catalog/decorations'
 import type {
   LevelConfig,
+  LevelTitle,
   PlacedDevice,
   PlacedOrnament,
   PlacedString,
   ScoreBreakdown,
   ThemeTag,
+  TitleWhen,
 } from '../types'
 
 function clamp(n: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, n))
 }
 
-function pickTitle(level: LevelConfig, popularity: number, behaviorTags: string[], memePreferred: boolean): string {
+/** 稱號判定用現場狀態 */
+interface TitleContext {
+  itemCount: number
+  treeOrnaments: number
+  strings: number
+  stringNodes: number
+  devices: number
+  powerDraw: number
+  sceneFit: number
+  colorHarmony: number
+  spatialBalance: number
+  deviceAim: number
+  preferredColorRatio: number
+  weighted: number
+  unevenSpatial: boolean
+  topperPlaced: boolean
+  basePlaced: boolean
+  ids: Set<string>
+  tags: Set<string>
+  familyCount: number
+}
+
+function matchWhen(cond: TitleWhen, ctx: TitleContext): boolean {
+  switch (cond.kind) {
+    case 'maxItems':
+      return ctx.itemCount <= cond.n
+    case 'minItems':
+      return ctx.itemCount >= cond.n
+    case 'maxTreeOrnaments':
+      return ctx.treeOrnaments <= cond.n
+    case 'minTreeOrnaments':
+      return ctx.treeOrnaments >= cond.n
+    case 'maxStrings':
+      return ctx.strings <= cond.n
+    case 'minStrings':
+      return ctx.strings >= cond.n
+    case 'maxStringNodes':
+      return ctx.stringNodes <= cond.n
+    case 'minStringNodes':
+      return ctx.stringNodes >= cond.n
+    case 'maxDevices':
+      return ctx.devices <= cond.n
+    case 'minDevices':
+      return ctx.devices >= cond.n
+    case 'maxPower':
+      return ctx.powerDraw <= cond.w
+    case 'minPower':
+      return ctx.powerDraw >= cond.w
+    case 'maxSceneFit':
+      return ctx.sceneFit <= cond.n
+    case 'minSceneFit':
+      return ctx.sceneFit >= cond.n
+    case 'maxColor':
+      return ctx.colorHarmony <= cond.n
+    case 'minColor':
+      return ctx.colorHarmony >= cond.n
+    case 'maxSpatial':
+      return ctx.spatialBalance <= cond.n
+    case 'minSpatial':
+      return ctx.spatialBalance >= cond.n
+    case 'maxDeviceAim':
+      return ctx.deviceAim <= cond.n
+    case 'minDeviceAim':
+      return ctx.deviceAim >= cond.n
+    case 'maxPrefColor':
+      return ctx.preferredColorRatio <= cond.r
+    case 'minPrefColor':
+      return ctx.preferredColorRatio >= cond.r
+    case 'maxWeighted':
+      return ctx.weighted <= cond.n
+    case 'minWeighted':
+      return ctx.weighted >= cond.n
+    case 'unevenSpatial':
+      return ctx.unevenSpatial
+    case 'noTopper':
+      return !ctx.topperPlaced
+    case 'hasTopper':
+      return ctx.topperPlaced
+    case 'noBase':
+      return !ctx.basePlaced
+    case 'hasBase':
+      return ctx.basePlaced
+    case 'hasId':
+      return ctx.ids.has(cond.id)
+    case 'missingId':
+      return !ctx.ids.has(cond.id)
+    case 'hasTag':
+      return ctx.tags.has(cond.tag)
+    case 'familyCountAtLeast':
+      return ctx.familyCount >= cond.n
+    case 'familyCountAtMost':
+      return ctx.familyCount <= cond.n
+    default:
+      return false
+  }
+}
+
+function titleMatches(title: LevelTitle, ctx: TitleContext): boolean {
+  if (!title.when?.length) return true
+  return title.when.every((c) => matchWhen(c, ctx))
+}
+
+/**
+ * 同積分帶內：先找「條件全過」的稱號；
+ * 條件越多越優先；同優先度隨機，避免永遠同一句。
+ * 若都沒過，用無條件保底稱號。
+ */
+function pickTitle(level: LevelConfig, popularity: number, memePreferred: boolean, ctx: TitleContext): string {
   const bands = level.titles.filter((b) => popularity >= b.min && popularity <= b.max)
   const meme = bands.filter((b) => b.tone === 'meme')
   const normal = bands.filter((b) => b.tone === 'normal')
   const pool = (memePreferred && meme.length ? meme : normal.length ? normal : bands).flatMap((b) => b.titles)
   if (!pool.length) return '神秘的童話訪客'
-  const hit = pool.find((t) => behaviorTags.some((tag) => t.includes(tag.slice(0, 2))))
-  return hit ?? pool[Math.floor(Math.random() * pool.length)]!
+
+  const matched = pool.filter((title) => title.when?.length && titleMatches(title, ctx))
+  const fallbacks = pool.filter((title) => !title.when?.length)
+  const candidates = matched.length ? matched : fallbacks.length ? fallbacks : pool
+
+  let bestScore = -1
+  const top: LevelTitle[] = []
+  for (const title of candidates) {
+    const score = title.when?.length ?? 0
+    if (score > bestScore) {
+      bestScore = score
+      top.length = 0
+      top.push(title)
+    } else if (score === bestScore) {
+      top.push(title)
+    }
+  }
+  return top[Math.floor(Math.random() * top.length)]!.text
 }
 
 /** 數量門檻：少放仍偏低，但不至於直接歸零 */
@@ -256,9 +381,10 @@ export function scoreLayout(
   }
   powerDraw = Math.round(powerDraw)
 
+  const unevenSpatial = qMax > 0 && qMin / qMax < 0.35
   if (itemCount <= 3) behaviorTags.push('就只是一棵樹')
   if ((itemCount >= 8 || stringNodeCount >= 8) && weighted < 40) behaviorTags.push('完全是在浪費電')
-  if (qMax > 0 && qMin / qMax < 0.35 && itemCount >= 5) behaviorTags.push('聖誕樹本人很想請假')
+  if (unevenSpatial && itemCount >= 5) behaviorTags.push('聖誕樹本人很想請假')
   if (devices.length >= 2 && deviceAim < 55) behaviorTags.push('公園管理局已報警')
   if (preferredColorRatio < 0.45 && itemCount >= 6) behaviorTags.push('這比較像工地夜景')
   if (devices.length >= 2 && treeOrnaments + strings.length <= 4) behaviorTags.push('樹：我只是背景板')
@@ -268,9 +394,27 @@ export function scoreLayout(
 
   const memePreferred = behaviorTags.length > 0 && (popularity < 45000 || weighted < 50)
 
-  let title = pickTitle(level, popularity, behaviorTags, memePreferred)
-  if (behaviorTags.includes('就只是一棵樹') && popularity < 12000) title = '就只是一棵樹'
-  if (behaviorTags.includes('完全是在浪費電') && popularity < 32000) title = '完全是在浪費電'
+  const titleCtx: TitleContext = {
+    itemCount,
+    treeOrnaments,
+    strings: strings.length,
+    stringNodes: stringNodeCount,
+    devices: devices.length,
+    powerDraw,
+    sceneFit,
+    colorHarmony,
+    spatialBalance,
+    deviceAim,
+    preferredColorRatio,
+    weighted,
+    unevenSpatial,
+    topperPlaced,
+    basePlaced,
+    ids,
+    tags: tagSet,
+    familyCount: families.length,
+  }
+  const title = pickTitle(level, popularity, memePreferred, titleCtx)
 
   return {
     sceneFit: Math.round(sceneFit),

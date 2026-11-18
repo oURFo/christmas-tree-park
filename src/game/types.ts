@@ -33,10 +33,53 @@ export interface DecorDef {
   aimable?: boolean
 }
 
+/** 稱號觸發條件（同一積分帶內用來分流） */
+export type TitleWhen =
+  | { kind: 'maxItems'; n: number }
+  | { kind: 'minItems'; n: number }
+  | { kind: 'maxTreeOrnaments'; n: number }
+  | { kind: 'minTreeOrnaments'; n: number }
+  | { kind: 'maxStrings'; n: number }
+  | { kind: 'minStrings'; n: number }
+  | { kind: 'maxStringNodes'; n: number }
+  | { kind: 'minStringNodes'; n: number }
+  | { kind: 'maxDevices'; n: number }
+  | { kind: 'minDevices'; n: number }
+  | { kind: 'maxPower'; w: number }
+  | { kind: 'minPower'; w: number }
+  | { kind: 'maxSceneFit'; n: number }
+  | { kind: 'minSceneFit'; n: number }
+  | { kind: 'maxColor'; n: number }
+  | { kind: 'minColor'; n: number }
+  | { kind: 'maxSpatial'; n: number }
+  | { kind: 'minSpatial'; n: number }
+  | { kind: 'maxDeviceAim'; n: number }
+  | { kind: 'minDeviceAim'; n: number }
+  | { kind: 'maxPrefColor'; r: number }
+  | { kind: 'minPrefColor'; r: number }
+  | { kind: 'maxWeighted'; n: number }
+  | { kind: 'minWeighted'; n: number }
+  | { kind: 'unevenSpatial' }
+  | { kind: 'noTopper' }
+  | { kind: 'hasTopper' }
+  | { kind: 'noBase' }
+  | { kind: 'hasBase' }
+  | { kind: 'hasId'; id: string }
+  | { kind: 'missingId'; id: string }
+  | { kind: 'hasTag'; tag: ThemeTag }
+  | { kind: 'familyCountAtLeast'; n: number }
+  | { kind: 'familyCountAtMost'; n: number }
+
+export interface LevelTitle {
+  text: string
+  /** 條件全滿足才可出現；越多重條件優先越高。無 when＝該帶保底候選 */
+  when?: TitleWhen[]
+}
+
 export interface LevelTitleBand {
   min: number
   max: number
-  titles: string[]
+  titles: LevelTitle[]
   tone: 'normal' | 'meme'
 }
 

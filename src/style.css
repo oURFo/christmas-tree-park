@@ -133,6 +133,14 @@ body,
   border: 2px solid rgba(198, 40, 40, 0.35);
 }
 
+.danger-btn.active,
+.danger-btn[aria-pressed='true'] {
+  background: #c62828;
+  color: #fff;
+  border-color: #a01f1f;
+  box-shadow: 0 8px 20px rgba(198, 40, 40, 0.35);
+}
+
 .string-toolbar,
 .device-toolbar {
   margin: 10px 14px 0;

@@ -18,10 +18,18 @@
         <header class="top-bar">
           <div class="level-chip" id="level-chip">溫馨童話夜</div>
           <div class="top-actions">
+            <button type="button" id="btn-delete-mode" class="danger-btn" aria-pressed="false">回收</button>
             <button type="button" id="btn-mute" class="icon-btn" aria-label="靜音">🔊</button>
             <button type="button" id="btn-finish" class="primary-btn">完成佈置</button>
           </div>
         </header>
+
+        <div id="delete-toolbar" class="string-toolbar hidden">
+          <span class="hint">點擊已配置的飾品／燈條／裝置即可回收（燈條整條移除）</span>
+          <div class="string-actions">
+            <button type="button" id="btn-delete-done" class="primary-btn">完成</button>
+          </div>
+        </div>
 
         <div id="string-toolbar" class="string-toolbar hidden">
           <span class="hint">點樹冠放節點 · 連成燈條</span>
