@@ -147,19 +147,19 @@ function pickTitle(level: LevelConfig, popularity: number, memePreferred: boolea
   return top[Math.floor(Math.random() * top.length)]!.text
 }
 
-/** 數量門檻：少放仍偏低，但不至於直接歸零 */
+/** 數量門檻：略放寬，中量佈置也能拿到可用分數 */
 function quantityGate(n: number): number {
   if (n <= 0) return 0
-  if (n < 5) return 0.22
-  if (n < 8) return 0.38
-  if (n < 12) return 0.52
-  if (n < 16) return 0.68
-  if (n < 22) return 0.82
-  if (n < 28) return 0.92
+  if (n < 4) return 0.32
+  if (n < 7) return 0.5
+  if (n < 10) return 0.66
+  if (n < 14) return 0.8
+  if (n < 20) return 0.9
+  if (n < 26) return 0.96
   return 1
 }
 
-/** 超嚴苛評分：要夠多、夠散、夠貼主題、有燈條與裝置才衝高 */
+/** 評分：貼主題仍重要，但懲罰較溫和 */
 export function scoreLayout(
   level: LevelConfig,
   ornaments: PlacedOrnament[],
@@ -212,11 +212,11 @@ export function scoreLayout(
     }
   }
   const tagRatio = tagHits / Math.max(1, tagTotal)
-  let sceneFit = clamp(tagRatio * 90)
-  if (tagRatio < 0.55) sceneFit = clamp(sceneFit * 0.6)
-  if (tagRatio < 0.4) sceneFit = clamp(sceneFit * 0.55)
-  if (itemCount < 10) sceneFit = clamp(sceneFit * 0.7)
-  if (itemCount > 0) sceneFit = Math.max(sceneFit, 8)
+  let sceneFit = clamp(tagRatio * 95)
+  if (tagRatio < 0.45) sceneFit = clamp(sceneFit * 0.75)
+  if (tagRatio < 0.3) sceneFit = clamp(sceneFit * 0.7)
+  if (itemCount < 8) sceneFit = clamp(sceneFit * 0.82)
+  if (itemCount > 0) sceneFit = Math.max(sceneFit, 14)
   sceneFit = clamp(sceneFit * sceneFitW)
 
   // 2) color harmony — 依關卡色系上限／偏好占比
@@ -227,14 +227,14 @@ export function scoreLayout(
   const families = [...colorCounts.keys()]
   const preferredColorRatio =
     allDefs.filter((d) => level.preferredColors.includes(d!.colorFamily)).length / Math.max(1, allDefs.length)
-  let colorHarmony = clamp(preferredColorRatio * 50)
-  if (itemCount >= 10 && families.length <= 2) colorHarmony = clamp(colorHarmony + 18)
-  else if (itemCount >= 10 && families.length === 3) colorHarmony = clamp(colorHarmony + 8)
-  if (families.length > maxFamilies) colorHarmony = clamp(colorHarmony - 12 * (families.length - maxFamilies))
-  if (preferredColorRatio < minPrefRatio) colorHarmony = clamp(colorHarmony * 0.7)
-  if (itemCount < 8) colorHarmony = clamp(colorHarmony * 0.55)
+  let colorHarmony = clamp(preferredColorRatio * 58)
+  if (itemCount >= 8 && families.length <= 2) colorHarmony = clamp(colorHarmony + 18)
+  else if (itemCount >= 8 && families.length === 3) colorHarmony = clamp(colorHarmony + 10)
+  if (families.length > maxFamilies) colorHarmony = clamp(colorHarmony - 8 * (families.length - maxFamilies))
+  if (preferredColorRatio < minPrefRatio) colorHarmony = clamp(colorHarmony * 0.82)
+  if (itemCount < 6) colorHarmony = clamp(colorHarmony * 0.7)
   // 保底：有放東西就不至於配色完全空白
-  if (itemCount > 0) colorHarmony = Math.max(colorHarmony, 8)
+  if (itemCount > 0) colorHarmony = Math.max(colorHarmony, 14)
 
   // 3) spatial balance
   const quadrants = [0, 0, 0, 0]
@@ -260,23 +260,23 @@ export function scoreLayout(
   const qMax = Math.max(...quadrants)
   const coverage = quadrants.filter((q) => q > 0).length
   const bandCoverage = bands.filter((b) => b > 0).length
-  let spatialBalance = clamp(coverage * 8 + bandCoverage * 8 + (qMax === 0 ? 0 : (qMin / qMax) * 30))
-  if (coverage < 4) spatialBalance = clamp(spatialBalance * 0.65)
-  if (bandCoverage < 3) spatialBalance = clamp(spatialBalance * 0.7)
-  if (treeOrnaments < 6) spatialBalance = clamp(spatialBalance * 0.55)
-  if (itemCount > 0) spatialBalance = Math.max(spatialBalance, 6)
+  let spatialBalance = clamp(coverage * 9 + bandCoverage * 9 + (qMax === 0 ? 0 : (qMin / qMax) * 32))
+  if (coverage < 3) spatialBalance = clamp(spatialBalance * 0.75)
+  if (bandCoverage < 2) spatialBalance = clamp(spatialBalance * 0.78)
+  if (treeOrnaments < 4) spatialBalance = clamp(spatialBalance * 0.7)
+  if (itemCount > 0) spatialBalance = Math.max(spatialBalance, 12)
 
   const topperPlaced = allDefs.some((d) => d!.kind === 'topper')
   const basePlaced = allDefs.some((d) => d!.kind === 'base')
-  if (!topperPlaced) spatialBalance = clamp(spatialBalance - 12)
-  if (!basePlaced) spatialBalance = clamp(spatialBalance - 10)
-  if (strings.length === 0) spatialBalance = clamp(spatialBalance - 18)
-  if (strings.length > 0) spatialBalance = clamp(spatialBalance + 4)
+  if (!topperPlaced) spatialBalance = clamp(spatialBalance - 7)
+  if (!basePlaced) spatialBalance = clamp(spatialBalance - 6)
+  if (strings.length === 0) spatialBalance = clamp(spatialBalance - 10)
+  if (strings.length > 0) spatialBalance = clamp(spatialBalance + 6)
 
   // 4) device aim
   let deviceAim = 0
   if (devices.length === 0) {
-    deviceAim = 0
+    deviceAim = 28
   } else {
     let sum = 0
     for (const d of devices) {
@@ -287,37 +287,36 @@ export function scoreLayout(
       if (dot < 0.4) behaviorTags.push('朝向偏差')
     }
     deviceAim = clamp(sum / devices.length)
-    if (deviceAim < 60) deviceAim = clamp(deviceAim * 0.65)
-    if (devices.length < 2) deviceAim = clamp(deviceAim * 0.7)
+    if (deviceAim < 50) deviceAim = clamp(deviceAim * 0.8)
+    if (devices.length < 2) deviceAim = clamp(deviceAim * 0.88)
   }
 
   // 5) richness：少放給低分，但避免叠乘到 0
   const unique = new Set(allDefs.map((d) => d!.id)).size
-  let richness = clamp(unique * 3.2 + Math.min(itemCount, 28) * 1.2)
-  if (itemCount < 12) richness = clamp(richness * 0.55)
-  if (itemCount < 8) richness = clamp(richness * 0.65)
-  if (unique < 8) richness = clamp(richness * 0.7)
-  if (itemCount > 45) richness = clamp(richness - (itemCount - 45) * 2.5)
-  if (stringNodeCount >= 10 && spatialBalance < 40) richness = clamp(richness * 0.7)
+  let richness = clamp(unique * 3.6 + Math.min(itemCount, 28) * 1.35)
+  if (itemCount < 10) richness = clamp(richness * 0.7)
+  if (itemCount < 6) richness = clamp(richness * 0.78)
+  if (unique < 6) richness = clamp(richness * 0.8)
+  if (itemCount > 50) richness = clamp(richness - (itemCount - 50) * 2)
+  if (stringNodeCount >= 10 && spatialBalance < 35) richness = clamp(richness * 0.8)
   // 簡約關：堆太多反而扣分
   if (rules.preferSparse) {
     const softCap = rules.sparseItemSoftCap ?? 20
-    if (itemCount > softCap) richness = clamp(richness - (itemCount - softCap) * 2.2)
-    if (families.length <= 2 && itemCount <= softCap) richness = clamp(richness + 10)
+    if (itemCount > softCap) richness = clamp(richness - (itemCount - softCap) * 1.6)
+    if (families.length <= 2 && itemCount <= softCap) richness = clamp(richness + 12)
   }
   richness = clamp(richness * richnessBonus)
-  // 保底：有內容至少 10 分左右的「寒酸但有分數」
-  if (itemCount > 0) richness = Math.max(richness, Math.min(18, 6 + unique * 2 + itemCount))
+  // 保底：有內容至少給可讀分數
+  if (itemCount > 0) richness = Math.max(richness, Math.min(24, 10 + unique * 2 + itemCount))
 
   if (strings.length === 0) {
-    sceneFit = clamp(sceneFit - 8)
-    colorHarmony = clamp(colorHarmony - 5)
+    sceneFit = clamp(sceneFit - 4)
+    colorHarmony = clamp(colorHarmony - 3)
   }
 
   let weighted =
     sceneFit * 0.28 + colorHarmony * 0.22 + spatialBalance * 0.26 + deviceAim * 0.14 + richness * 0.1
 
-  // 再乘數量門檻，裝一點直接壓垮
   weighted = clamp(weighted * quantityGate(itemCount))
 
   const combos: string[] = []
@@ -325,29 +324,29 @@ export function scoreLayout(
   const ids = new Set(allDefs.map((d) => d!.id))
   const tagSet = new Set(allDefs.flatMap((d) => d!.tags))
 
-  // combo 需達到基本完整度才給
-  const comboReady = itemCount >= 16 && strings.length >= 1 && coverage >= 3
+  // combo 門檻略降
+  const comboReady = itemCount >= 12 && strings.length >= 1 && coverage >= 3
   if (comboReady && (ids.has('top_star') || ids.has('top_snowflake')) && ids.has('dev_snow')) {
     combos.push('星光與雪夜')
-    bonus += 1800
+    bonus += 2000
   }
   const natureCount = ['ch_pinecone', 'ch_deer', 'ch_snowman', 'ch_holly'].filter((id) => ids.has(id)).length
-  if (comboReady && natureCount >= 3 && (ids.has('dev_fire') || ids.has('dev_spot')) && sceneFit >= 60) {
+  if (comboReady && natureCount >= 3 && (ids.has('dev_fire') || ids.has('dev_spot')) && sceneFit >= 55) {
     combos.push('森林公園童話')
-    bonus += 2000
-  }
-  const spots = devices.filter((d) => d.defId === 'dev_spot')
-  if (comboReady && spots.length >= 2 && deviceAim >= 75) {
-    combos.push('光影魔術師')
     bonus += 2200
   }
-  if (comboReady && coverage === 4 && bandCoverage === 3 && basePlaced && topperPlaced) {
+  const spots = devices.filter((d) => d.defId === 'dev_spot')
+  if (comboReady && spots.length >= 2 && deviceAim >= 68) {
+    combos.push('光影魔術師')
+    bonus += 2400
+  }
+  if (comboReady && coverage === 4 && bandCoverage >= 2 && basePlaced && topperPlaced) {
     combos.push('完美環景打卡點')
-    bonus += 2000
+    bonus += 2200
   }
 
-  // 更陡曲線 + 更低基數
-  let popularity = Math.round(Math.pow(weighted / 100, 1.85) * 52000 + bonus)
+  // 略放寬人氣曲線
+  let popularity = Math.round(Math.pow(weighted / 100, 1.65) * 62000 + bonus)
   popularity = Math.max(0, Math.min(99999, popularity))
 
   // 耗費電力（瓦）：燈條／球燈／裝置加總

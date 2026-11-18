@@ -72,9 +72,18 @@ export class Game {
   private readonly lookYMax = 5.6
   private readonly camYMin = 1.8
   private readonly camYMax = 7.2
+  /** 遊玩預設距離；最遠可再退約 20% */
+  private readonly camRadiusDefault = 14.5
+  private readonly camRadiusMin = 11.5
+  private readonly camRadiusMax = 14.5 * 1.2
   draggingCamera = false
   lastX = 0
   lastY = 0
+  /** 多點觸控（雙指縮放） */
+  private readonly activePointers = new Map<number, { x: number; y: number }>()
+  private pinchStartDist = 0
+  private pinchStartRadius = 14.5
+  private pinching = false
 
   // light string editing
   stringDraftPoints: THREE.Vector3[] = []
@@ -198,6 +207,7 @@ export class Game {
       this.lastX = x
       this.lastY = y
       this.updatePointer(x, y)
+      if (this.pinching) return
       if (this.phase !== 'decorate') return
 
       if (this.deleteMode) {
@@ -279,6 +289,7 @@ export class Game {
 
     const move = (x: number, y: number) => {
       this.updatePointer(x, y)
+      if (this.pinching) return
       if (this.phase !== 'decorate') return
 
       if (this.draggingProp && this.selectedPropId) {
@@ -311,12 +322,77 @@ export class Game {
     }
 
     el.addEventListener('pointerdown', (e) => {
-      el.setPointerCapture(e.pointerId)
+      this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (this.activePointers.size === 2) {
+        this.beginPinch()
+        return
+      }
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
       down(e.clientX, e.clientY)
     })
-    el.addEventListener('pointermove', (e) => move(e.clientX, e.clientY))
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    el.addEventListener('pointermove', (e) => {
+      if (this.activePointers.has(e.pointerId)) {
+        this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      }
+      if (this.pinching && this.activePointers.size >= 2) {
+        this.updatePinch()
+        return
+      }
+      move(e.clientX, e.clientY)
+    })
+    const endPointer = (e: PointerEvent) => {
+      this.activePointers.delete(e.pointerId)
+      if (this.pinching && this.activePointers.size < 2) {
+        this.pinching = false
+        this.pinchStartDist = 0
+      }
+      up()
+    }
+    el.addEventListener('pointerup', endPointer)
+    el.addEventListener('pointercancel', endPointer)
+    el.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault()
+        if (this.phase !== 'decorate' && this.phase !== 'intro') return
+        // 向下滾＝拉遠
+        const factor = Math.exp(e.deltaY * 0.0012)
+        this.setCamRadius(this.camRadius * factor)
+      },
+      { passive: false },
+    )
+  }
+
+  private beginPinch() {
+    this.pinching = true
+    this.draggingCamera = false
+    this.draggingDevice = false
+    this.draggingProp = false
+    const pts = [...this.activePointers.values()]
+    if (pts.length < 2) return
+    const dx = pts[0]!.x - pts[1]!.x
+    const dy = pts[0]!.y - pts[1]!.y
+    this.pinchStartDist = Math.hypot(dx, dy) || 1
+    this.pinchStartRadius = this.camRadius
+  }
+
+  private updatePinch() {
+    const pts = [...this.activePointers.values()]
+    if (pts.length < 2 || this.pinchStartDist <= 0) return
+    const dx = pts[0]!.x - pts[1]!.x
+    const dy = pts[0]!.y - pts[1]!.y
+    const dist = Math.hypot(dx, dy) || 1
+    // 雙指拉開＝拉遠鏡頭
+    const ratio = this.pinchStartDist / dist
+    this.setCamRadius(this.pinchStartRadius * ratio)
+  }
+
+  private setCamRadius(r: number) {
+    this.camRadius = THREE.MathUtils.clamp(r, this.camRadiusMin, this.camRadiusMax)
   }
 
   private updatePointer(x: number, y: number) {
@@ -350,9 +426,11 @@ export class Game {
     this.stringDraftPoints = []
     this.pendingResult = null
     this.camAngle = Math.PI * 0.25
-    this.camRadius = 14.5
+    this.camRadius = this.camRadiusDefault
     this.camHeight = 5.0
     this.target.set(0, 3.1, 0)
+    this.pinching = false
+    this.activePointers.clear()
 
     // clear scene children except lights we rebuild
     while (this.scene.children.length) this.scene.remove(this.scene.children[0]!)
