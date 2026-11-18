@@ -222,16 +222,11 @@ export class Game {
         return
       }
 
+      // 目錄有選取時：一律優先放置，不改成選取既有物件
       if (this.selectedDef?.kind === 'device') {
-        const deviceHit = this.hitDevice()
-        if (deviceHit) {
-          this.selectDevice(deviceHit)
-          this.draggingDevice = true
-          return
-        }
         const ground = this.hitGround()
         if (ground) {
-          this.placeOrSelectDevice()
+          this.placeDeviceAt(ground)
           return
         }
         this.draggingCamera = true
@@ -239,12 +234,6 @@ export class Game {
       }
 
       if (this.selectedDef && (this.selectedDef.kind === 'ornament' || this.selectedDef.kind === 'topper' || this.selectedDef.kind === 'base')) {
-        const propHit = this.hitEditableProp()
-        if (propHit && (this.selectedDef.kind === 'topper' || this.selectedDef.kind === 'base')) {
-          this.selectProp(propHit)
-          this.draggingProp = true
-          return
-        }
         // 點到樹上才放置；點空白處照常轉鏡頭
         if (this.selectedDef.kind === 'ornament') {
           if (this.hitTree()) this.placeOrnamentOrBase()
@@ -262,7 +251,7 @@ export class Game {
           } else this.draggingCamera = true
           return
         }
-        // topper：點樹或空白都可放／轉
+        // topper：點樹才放，空白轉鏡頭
         if (this.hitTree()) this.placeOrnamentOrBase()
         else this.draggingCamera = true
         return
@@ -860,19 +849,10 @@ export class Game {
     this.stringDraftPoints = []
   }
 
-  private placeOrSelectDevice() {
+  private placeDeviceAt(ground: THREE.Vector3) {
     const def = this.selectedDef
     if (!def || def.kind !== 'device') return
 
-    const existing = this.hitDevice()
-    if (existing) {
-      this.selectDevice(existing)
-      this.draggingDevice = true
-      return
-    }
-
-    const ground = this.hitGround()
-    if (!ground) return
     // 裝置仍避開樹幹碰撞圈
     const pos = ground.clone()
     const r = Math.hypot(pos.x, pos.z)
